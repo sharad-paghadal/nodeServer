@@ -13,12 +13,17 @@ io.on('connection', function(socket){
 	socket.on('disconnect', function(data){
 		console.log("Disconnected");
 	});
+    socket.on("message", function (data) {
+        data = JSON.parse(data);
+        console.log(data);
+        io.sockets.emit( 'message', { name: data['author'], message: data['message'] } );
+    });
 });
 
 r.connect({host: 'localhost', port: 28015}, function(err, conn) {
     if (err) throw err;
     connection = conn;
-    r.table("fake_data").changes().run(connection, function(err, cursor) {
+    r.db("protrade").table("call").changes().run(connection, function(err, cursor) {
         if (err) throw err;
         cursor.each(function(err, item) {
             if (err) throw err;
