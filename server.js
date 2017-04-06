@@ -29,7 +29,7 @@ r.connect({host: 'localhost', port: 28015}, function(err, conn) {
             if (err) throw err;
             var data = item['new_val'];
             console.log("Added document", data);
-            io.sockets.emit( 'message', { name: data['name'], message: data['message'] } );
+            io.sockets.emit( 'message', { code: data['code'], type: data['type'] } );
         });
 	});
 });
