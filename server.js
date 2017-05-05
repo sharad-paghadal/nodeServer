@@ -9,7 +9,6 @@ server.listen(8088);
 console.log("server is running on 8088 port...");
 
 io.on('connection', function(socket){
-    var type
     console.log("Connected");
 
     socket.on('disconnect', function(data){
@@ -23,15 +22,36 @@ io.on('connection', function(socket){
         r.connect({host: 'localhost', port: 28015}, function(err, conn) {
             if (err) throw err;
             connection = conn;
-            r.db("protrade").table("rawvalue").filter({code : data['code']}).pluck('current_price','time_stamp').changes().run(connection, function(err, cursor) {
-                if (err) throw err;
-                cursor.each(function(err, item) {
+            if (data['type'] == "line") {
+                r.db("protrade").table("rawvalue").filter({code : data['code']}).pluck('current_price','time_stamp').changes().run(connection, function(err, cursor) {
                     if (err) throw err;
-                    var data = item['new_val'];
-                    console.log("Added document on console", data);
-                    socket.emit( 'upDateData', data);
+                    cursor.each(function(err, item) {
+                        if (err) throw err;
+                        var responseData = item['new_val'];
+                        console.log("Added document on console", responseData);
+                        socket.emit( 'upDateData', responseData);
+                    });
                 });
-            });
+            }else if (data['type'] == "candleStick") {}{
+                var tableName = "cycle_".concat(data['cycle']);
+                r.db("trade_cycle").table(tableName).filter({code : data['code']}).changes().run(connection, function(err, cursor) {
+                    if (err) throw err;
+                    cursor.each(function(err, item) {
+                        if (err) throw err;
+                        if (item['old_val'] == null) {
+                            var responseData = item['new_val'];
+                            console.log("Added new Point", responseData);
+                            socket.emit( 'newPoint', responseData);
+                        }else{
+                            var responseData = item['new_val'];
+                            console.log("Updated Point", responseData);
+                            socket.emit( 'updatePoint', responseData);
+                        }
+                        
+                    });
+                });
+            }
+            
         });
     });
 });
